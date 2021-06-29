@@ -6,6 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(OpenMPTarget REQUIRED NVPTX)
 
 option(OMPBLAS_BUILD_TESTS "Build the ompBLAS tests" ON)
+option(OMPBLAS_BUILD_BENCHMARK "Build the ompBLAS benchmarks" ON)
 
 # Compiler flags
 set(COMPILER_WARNINGS
@@ -24,7 +25,7 @@ target_include_directories(
   ompBLAS PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_link_libraries(ompBLAS PRIVATE OpenMPTarget::OpenMPTarget_NVPTX)
+target_link_libraries(ompBLAS PUBLIC OpenMPTarget::OpenMPTarget_NVPTX)
 target_compile_options(ompBLAS PRIVATE ${COMPILER_WARNINGS})
 
 # Configure Installation 
@@ -59,6 +60,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ompBLAS DESTINATION include
         FILES_MATCHING PATTERN "*.h")
 
 add_subdirectory(lib)
+
+if (OMPBLAS_BUILD_BENCHMARK)
+  add_subdirectory(util)
+endif()
 
 if (OMPBLAS_BUILD_TESTS)
   enable_testing()

@@ -7,4 +7,4 @@ macro(add_test_file TESTNAME)
   add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
 endmacro()
 
-add_test_file(dgemm dgemm.cpp)
+add_test_file(gemm-test Gemm.cpp)

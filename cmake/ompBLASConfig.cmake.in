@@ -2,5 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 find_dependency(OpenMP)
+find_dependency(OpenMPTarget)
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 check_required_components("@PROJECT_NAME@")

@@ -1,4 +1,16 @@
-#[=======================================================================[.rst:
+##===----------------------------------------------------------------------===##
+#
+# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+#
+##===----------------------------------------------------------------------===##
+#
+# Find OpenMP Target offloading Support for various compilers.
+#
+##===----------------------------------------------------------------------===##
+
+#[========================================================================[.rst:
 FindOpenMPTarget
 ----------------
 
@@ -8,6 +20,9 @@ This module can be used to detect OpenMP target offloading support in a
 compiler. If the compiler support OpenMP Offloading to a specified target, the
 flags required to compile offloading code to that target are output for each
 target.
+
+This module will automatically include OpenMP support if it was not loaded
+already. It does not need to be included separately to get full OpenMP support.
 
 Variables
 ^^^^^^^^^
@@ -21,92 +36,120 @@ Depending on the enabled components the following variables will be set:
 ``OpenMPTarget_FOUND``
   Variable indicating that OpenMP target offloading flags for all requested
   targets have been found.
-``OpenMPTarget_VERSION``
-  Minimal version of the OpenMP standard detected among the requested languages,
-  or all enabled languages if no components were specified.
 
 This module will set the following variables per language in your
-project, where ``<target>`` is one of NVPTX or AMDGCN
+project, where ``<device>`` is one of NVPTX or AMDGCN
 
-``OpenMPTarget_<target>_FOUND``
-  Variable indicating if OpenMP support for the ``<target>`` was detected.
-``OpenMPTarget_<target>_FLAGS``
-  OpenMP compiler flags for offloading to ``<target>``, separated by spaces.
+``OpenMPTarget_<device>_FOUND``
+  Variable indicating if OpenMP support for the ``<device>`` was detected.
+``OpenMPTarget_<device>_FLAGS``
+  OpenMP compiler flags for offloading to ``<device>``, separated by spaces.
 
-For linking with OpenMP code written in ``<target>``, the following
+For linking with OpenMP code written in ``<device>``, the following
 variables are provided:
 
-``OpenMPTarget_<target>_LIBRARIES``
+``OpenMPTarget_<device>_LIBRARIES``
   A list of libraries needed to link with OpenMP code written in ``<lang>``.
 
 Additionally, the module provides :prop_tgt:`IMPORTED` targets:
 
-``OpenMPTarget::OpenMP_<target>``
-  Target for using OpenMP offloading to ``<target>``.
+``OpenMPTarget::OpenMPTarget_<device>``
+  Target for using OpenMP offloading to ``<device>``.
 
-The module will also try to provide the OpenMP version variables:
+If the specific architecture of the target is needed, it can be manually
+specified by setting a variable to the desired architecture. Variables can also
+be used to override the standard flag searching for a given compiler.
 
-``OpenMPTarget_<target>_VERSION_MAJOR``
-  Major version of OpenMP implemented by the ``<target>`` compiler.
-``OpenMPTarget_<target>_VERSION_MINOR``
-  Minor version of OpenMP implemented by the ``<target>`` compiler.
-``OpenMPTarget_<target>_VERSION``
-  OpenMP version implemented by the ``<target>`` compiler.
+``OpenMPTarget_<device>_ARCH``
+  Sets the architecture of ``<device>`` to compile for. Such as `sm_70` for NVPTX
+  or `gfx908` for AMDGCN. 
 
-#]=======================================================================]
+``OpenMPTarget_<device>_DEVICE``
+  Sets the name of the device to offload to.
+
+``OpenMPTarget_<device>_FLAGS``
+  Sets the compiler flags for offloading to ``<device>``.
+
+#]========================================================================]
+
+# TODO: Support Fortran
+# TODO: Support multiple offloading targets by setting the "OpenMPTarget" target
+#       to include flags for all components loaded
+# TODO: Configure target architecture without a variable (component NVPTX_SM_70)
+# TODO: Test more compilers
+
 cmake_policy(PUSH)
-cmake_policy(SET CMP0012 NEW) # if() recognizes numbers and booleans
-cmake_policy(SET CMP0054 NEW) # if() quoted variables not dereferenced
-cmake_policy(SET CMP0057 NEW) # if IN_LIST
+cmake_policy(VERSION 3.13.4)
 
-if(NOT OpenMP_FOUND)
-  if(CMAKE_C_COMPILER_LOADED AND CMAKE_CXX_COMPILER_LOADED)
-    find_package(OpenMP ${OpenMPTarget_FIND_VERSION} REQUIRED C CXX)
-  elseif(CMAKE_C_COMPILER_LOADED)
-    find_package(OpenMP ${OpenMPTarget_FIND_VERSION} REQUIRED C)
-  else()
-    find_package(OpenMP ${OpenMPTarget_FIND_VERSION} REQUIRED CXX)
-  endif()
-endif()
+find_package(OpenMP ${OpenMPTarget_FIND_VERSION} REQUIRED)
 
-function(_OPENMP_TARGET_ARCH_FLAG_CANDIDATES LANG TARGET_ARCH)
-  if(NOT OpenMPTarget_${LANG}_FLAG)
-    set(OpenMPTarget_FLAG_CANDIDATES "NOTFOUND")
+# Find the offloading flags for each compiler.
+function(_OPENMP_TARGET_DEVICE_FLAG_CANDIDATES LANG DEVICE)
+  if(NOT OpenMPTarget_${LANG}_FLAGS)
+    unset(OpenMPTarget_FLAG_CANDIDATES)
 
-    set(OMPTarget_FLAG_Clang "-fopenmp-targets=${TARGET_ARCH}")
-    set(OMPTarget_FLAG_GNU "-foffload=${TARGET_ARCH}=\"-lm -latomic\"")
-    set(OMPTarget_FLAG_XL "-qoffload")
+    set(OMPTarget_FLAGS_Clang "-fopenmp-targets=${DEVICE}")
+    set(OMPTarget_FLAGS_GNU "-foffload=${DEVICE}=\"-lm -latomic\"")
+    set(OMPTarget_FLAGS_XL "-qoffload")
+    set(OMPTarget_FLAGS_PGI "-mp=${DEVICE}")
+    set(OMPTarget_FLAGS_NVHPC "-mp=${DEVICE}")
 
-    if(DEFINED OMPTarget_FLAG_${CMAKE_${LANG}_COMPILER_ID})
-      set(OpenMPTarget_FLAG_CANDIDATES "${OMPTarget_FLAG_${CMAKE_${LANG}_COMPILER_ID}}")
+    if(DEFINED OMPTarget_FLAGS_${CMAKE_${LANG}_COMPILER_ID})
+      set(OpenMPTarget_FLAG_CANDIDATES "${OMPTarget_FLAGS_${CMAKE_${LANG}_COMPILER_ID}}")
     endif()
 
     set(OpenMPTarget_${LANG}_FLAG_CANDIDATES "${OpenMPTarget_FLAG_CANDIDATES}" PARENT_SCOPE)
   else()
-    set(OpenMPTarget_${LANG}_FLAG_CANDIDATES "${OpenMPTarget_${LANG}_FLAG}" PARENT_SCOPE)
+    set(OpenMPTarget_${LANG}_FLAG_CANDIDATES "${OpenMPTarget_${LANG}_FLAGS}" PARENT_SCOPE)
   endif()
 endfunction()
 
-function(_OPENMP_TARGET_ARCH_ARCH_CANDIDATES LANG TARGET_ARCH)
-  if (NOT OpenMPTarget_${LANG}_ARCH)
-    set(OpenMPTarget_ARCH_CANDIDATES "NOTFOUND")
+# Get the coded name of the device for each compiler.
+function(_OPENMP_TARGET_DEVICE_CANDIDATES LANG DEVICE)
+  if (NOT OpenMPTarget_${DEVICE}_DEVICE)
+    unset(OpenMPTarget_DEVICE_CANDIDATES)
 
-    if("${TARGET_ARCH}" STREQUAL "NVPTX")
+    # Check each supported device.
+    if("${DEVICE}" STREQUAL "NVPTX")
       if ("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
-        set(OMPTarget_ARCH_Clang "nvptx32-nvidia-cuda")
+        set(OMPTarget_DEVICE_Clang "nvptx32-nvidia-cuda")
       else()
-        set(OMPTarget_ARCH_Clang "nvptx64-nvidia-cuda")
+        set(OMPTarget_DEVICE_Clang "nvptx64-nvidia-cuda")
       endif()
-      set(OMPTarget_ARCH_GNU "nvptx-none")
-      set(OMPTarget_ARCH_XL "")
+      set(OMPTarget_DEVICE_GNU "nvptx-none")
+      set(OMPTarget_DEVICE_XL "")
+      set(OMPTarget_DEVICE_PGI "gpu")
+      set(OMPTarget_DEVICE_NVHPC "gpu")
 
-      if(DEFINED OMPTarget_ARCH_${CMAKE_${LANG}_COMPILER_ID})
-        set(OpenMPTarget_ARCH_CANDIDATES "${OMPTarget_ARCH_${CMAKE_${LANG}_COMPILER_ID}}")
+      if(DEFINED OMPTarget_DEVICE_${CMAKE_${LANG}_COMPILER_ID})
+        set(OpenMPTarget_DEVICE_CANDIDATES "${OMPTarget_DEVICE_${CMAKE_${LANG}_COMPILER_ID}}")
+      endif()
+    elseif("${DEVICE}" STREQUAL "AMDGCN")
+      set(OMPTarget_DEVICE_Clang "amdgcn-amd-amdhsa")
+      set(OMPTarget_DEVICE_GNU "hsa")
+
+      if(DEFINED OMPTarget_DEVICE_${CMAKE_${LANG}_COMPILER_ID})
+        set(OpenMPTarget_DEVICE_CANDIDATES "${OMPTarget_DEVICE_${CMAKE_${LANG}_COMPILER_ID}}")
       endif()
     endif()
-    set(OpenMPTarget_${LANG}_ARCH_CANDIDATES "${OpenMPTarget_ARCH_CANDIDATES}" PARENT_SCOPE)
+    set(OpenMPTarget_${LANG}_DEVICE_CANDIDATES "${OpenMPTarget_DEVICE_CANDIDATES}" PARENT_SCOPE)
   else()
-    set(OpenMPTarget_${LANG}_ARCH_CANDIDATES "${OpenMPTarget_${LANG}_ARCH}" PARENT_SCOPE)
+    set(OpenMPTarget_${LANG}_DEVICE_CANDIDATES "${OpenMPTarget_${LANG}_DEVICE}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Get flags for setting the device's architecture for each compiler.
+function(_OPENMP_TARGET_DEVICE_ARCH_CANDIDATES LANG DEVICE DEVICE_FLAG)
+  if(OpenMPTarget_${DEVICE}_ARCH)
+    # Only Clang supports selecting the architecture for now.
+    set(OMPTarget_ARCH_Clang "-Xopenmp-target=${DEVICE_FLAG} -march=${OpenMPTarget_${DEVICE}_ARCH}")
+
+    if(DEFINED OMPTarget_ARCH_${CMAKE_${LANG}_COMPILER_ID})
+      set(OpenMPTarget_DEVICE_ARCH_CANDIDATES "${OMPTarget_ARCH_${CMAKE_${LANG}_COMPILER_ID}}")
+    endif()
+    set(OpenMPTarget_${LANG}_DEVICE_ARCH_CANDIDATES "${OpenMPTarget_DEVICE_ARCH_CANDIDATES}" PARENT_SCOPE)
+  else()
+    set(OpenMPTarget_${LANG}_DEVICE_ARCH_CANDIDATES "" PARENT_SCOPE)
   endif()
 endfunction()
 
@@ -119,7 +162,7 @@ int main(void) {
   return isHost;
 }")
 
-function(_OPENMP_TARGET_ARCH_WRITE_SOURCE_FILE LANG SRC_FILE_CONTENT_VAR SRC_FILE_NAME SRC_FILE_FULLPATH)
+function(_OPENMP_TARGET_WRITE_SOURCE_FILE LANG SRC_FILE_CONTENT_VAR SRC_FILE_NAME SRC_FILE_FULLPATH)
   set(WORK_DIR ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/FindOpenMPTarget)
   if("${LANG}" STREQUAL "C")
     set(SRC_FILE "${WORK_DIR}/${SRC_FILE_NAME}.c")
@@ -131,48 +174,77 @@ function(_OPENMP_TARGET_ARCH_WRITE_SOURCE_FILE LANG SRC_FILE_CONTENT_VAR SRC_FIL
   set(${SRC_FILE_FULLPATH} "${SRC_FILE}" PARENT_SCOPE)
 endfunction()
 
-function(_OPENMP_TARGET_ARCH_GET_FLAGS LANG TARGET_ARCH OPENMP_FLAG_VAR OPENMP_LIB_VAR OPENMP_ARCH_VAR)
-  _OPENMP_TARGET_ARCH_ARCH_CANDIDATES(${LANG} ${TARGET_ARCH})
-  _OPENMP_TARGET_ARCH_FLAG_CANDIDATES(${LANG} "${OpenMPTarget_${LANG}_ARCH_CANDIDATES}")
-  _OPENMP_TARGET_ARCH_WRITE_SOURCE_FILE("${LANG}" "TEST_SOURCE" OpenMPTargetTryFlag _OPENMP_TEST_SRC)
+# Get the candidate flags and try to compile a test application. If it compiles
+# and all the flags are found, we assume the compiler supports offloading.
+function(_OPENMP_TARGET_DEVICE_GET_FLAGS LANG DEVICE OPENMP_FLAG_VAR OPENMP_LIB_VAR OPENMP_DEVICE_VAR OPENMP_ARCH_VAR)
+  _OPENMP_TARGET_DEVICE_CANDIDATES(${LANG} ${DEVICE})
+  _OPENMP_TARGET_DEVICE_FLAG_CANDIDATES(${LANG} "${OpenMPTarget_${LANG}_DEVICE_CANDIDATES}")
+  _OPENMP_TARGET_DEVICE_ARCH_CANDIDATES(${LANG} ${DEVICE} "${OpenMPTarget_${LANG}_DEVICE_CANDIDATES}")
+  _OPENMP_TARGET_WRITE_SOURCE_FILE("${LANG}" "TEST_SOURCE" OpenMPTargetTryFlag _OPENMP_TEST_SRC)
 
+  # Try to compile a test application with the found flags.
   try_compile(OpenMPTarget_COMPILE_RESULT ${CMAKE_BINARY_DIR} ${_OPENMP_TEST_SRC}
-    CMAKE_FLAGS "-DCOMPILE_DEFINITIONS:STRING=${OpenMP_${LANG}_FLAGS} ${OpenMPTarget_${LANG}_FLAG_CANDIDATES}"
-                "-DINCLUDE_DIRECTORIES:STRING=${OpenMP_${LANG}_INCLUDE_DIR}"
+    CMAKE_FLAGS "-DCOMPILE_DEFINITIONS:STRING=${OpenMP_${LANG}_FLAGS} ${OpenMPTarget_${LANG}_FLAG_CANDIDATES} ${OpenMPTarget_${LANG}_DEVICE_ARCH_CANDIDATES}"
+    "-DINCLUDE_DIRECTORIES:STRING=${OpenMP_${LANG}_INCLUDE_DIR}"
     LINK_LIBRARIES ${CMAKE_${LANG}_VERBOSE_FLAG}
     OUTPUT_VARIABLE OpenMP_TRY_COMPILE_OUTPUT
   )
 
-if (OpenMPTarget_COMPILE_RESULT AND (NOT "${OpenMPTARGET_${LANG}_ARCH_CANDIDATES}" STREQUAL "NOTFOUND"))
+  file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+    "Detecting OpenMP ${CMAKE_${LANG}_COMPILER_ID} ${DEVICE} target support with the following Flags:
+    ${OpenMP_${LANG}_FLAGS} ${OpenMPTarget_${LANG}_FLAG_CANDIDATES} ${OpenMPTarget_${LANG}_DEVICE_ARCH_CANDIDATES}
+    With the following output:\n ${OpenMP_TRY_COMPILE_OUTPUT}\n")
+
+  # If compilation was successful and the device was found set the return variables.
+  if (OpenMPTarget_COMPILE_RESULT AND DEFINED OpenMPTarget_${LANG}_DEVICE_CANDIDATES)
+    file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+      "Compilation successful, adding flags for ${DEVICE}.\n\n")
+
+    # Clang has a seperate library for target offloading.
     if(CMAKE_${LANG}_COMPILER_ID STREQUAL "Clang")
       find_library(OpenMPTarget_libomptarget_LIBRARY
         NAMES omptarget
         HINTS ${CMAKE_${LANG}_IMPLICIT_LINK_DIRECTORIES}
       )
+      mark_as_advanced(OpenMPTarget_libomptarget_LIBRARY)
       set("${OPENMP_LIB_VAR}" "${OpenMPTarget_libomptarget_LIBRARY}" PARENT_SCOPE)
     else()
       unset("${OPENMP_LIB_VAR}" PARENT_SCOPE)
     endif()
-    set("${OPENMP_ARCH_VAR}" "${OpenMPTarget_${LANG}_ARCH_CANDIDATES}" PARENT_SCOPE)
+    set("${OPENMP_DEVICE_VAR}" "${OpenMPTarget_${LANG}_DEVICE_CANDIDATES}" PARENT_SCOPE)
     set("${OPENMP_FLAG_VAR}" "${OpenMPTarget_${LANG}_FLAG_CANDIDATES}" PARENT_SCOPE)
+    set("${OPENMP_ARCH_VAR}" "${OpenMPTarget_${LANG}_DEVICE_ARCH_CANDIDATES}" PARENT_SCOPE)
   else()
-    set("${OPENMP_ARCH_VAR}" "NOTFOUND" PARENT_SCOPE)
-    set("${OPENMP_FLAG_VAR}" "NOTFOUND" PARENT_SCOPE)
+    unset("${OPENMP_DEVICE_VAR}" PARENT_SCOPE)
+    unset("${OPENMP_FLAG_VAR}" PARENT_SCOPE)
+    unset("${OPENMP_ARCH_VAR}" PARENT_SCOPE)
   endif()
 endfunction()
 
+# Load the compiler support for each device.
 foreach(LANG IN ITEMS C CXX)
-  foreach(TARGET_ARCH IN ITEMS NVPTX AMDGCN)
+  # Cache the version in case CMake doesn't load the OpenMP package this time
+  set(OpenMP_${LANG}_VERSION ${OpenMP_${LANG}_VERSION}
+    CACHE STRING "OpenMP Version" FORCE)
+  mark_as_advanced(OpenMP_${LANG}_VERSION)
+  foreach(DEVICE IN ITEMS NVPTX AMDGCN)
     if(CMAKE_${LANG}_COMPILER_LOADED)
-      if(NOT DEFINED OpenMPTarget_${LANG}_FLAGS OR NOT DEFINED OpenMPTarget_${LANG}_Arch)
-        _OPENMP_TARGET_ARCH_GET_FLAGS(${LANG} ${TARGET_ARCH}
-        OpenMPTarget_${TARGET_ARCH}_FLAGS_WORK
-        OpenMPTarget_${TARGET_ARCH}_LIBS_WORK
-        OpenMPTarget_${TARGET_ARCH}_ARCH_WORK)
-        set(OpenMPTarget_${TARGET_ARCH}_FLAGS ${OpenMPTarget_${TARGET_ARCH}_FLAGS_WORK}
-            CACHE STRING "${TARGET_ARCH} target compile flags for OpenMP target offloading" FORCE)
-          set(OpenMPTarget_${TARGET_ARCH}_LIBS ${OpenMPTarget_${TARGET_ARCH}_LIBS_WORK}
-            CACHE STRING "${TARGET_ARCH} target libraries for OpenMP target offloading" FORCE)
+      if(NOT DEFINED OpenMPTarget_${LANG}_FLAGS OR NOT DEFINED OpenMPTarget_${LANG}_DEVICE)
+        _OPENMP_TARGET_DEVICE_GET_FLAGS(${LANG} ${DEVICE}
+          OpenMPTarget_${DEVICE}_FLAGS_WORK
+          OpenMPTarget_${DEVICE}_LIBS_WORK
+          OpenMPTarget_${DEVICE}_DEVICE_WORK
+          OpenMPTarget_${DEVICE}_ARCHS_WORK)
+
+        separate_arguments(_OpenMPTarget_${DEVICE}_FLAGS NATIVE_COMMAND "${OpenMPTarget_${DEVICE}_FLAGS_WORK}")
+        separate_arguments(_OpenMPTarget_${DEVICE}_ARCHS NATIVE_COMMAND "${OpenMPTarget_${DEVICE}_ARCHS_WORK}")
+        set(OpenMPTarget_${DEVICE}_FLAGS ${_OpenMPTarget_${DEVICE}_FLAGS}
+            CACHE STRING "${DEVICE} target compile flags for OpenMP target offloading" FORCE)
+        set(OpenMPTarget_${DEVICE}_ARCH ${_OpenMPTarget_${DEVICE}_ARCHS}
+            CACHE STRING "${DEVICE} target architecture flags for OpenMP target offloading" FORCE)
+        set(OpenMPTarget_${DEVICE}_LIBS ${OpenMPTarget_${DEVICE}_LIBS_WORK}
+            CACHE STRING "${DEVICE} target libraries for OpenMP target offloading" FORCE)
+        mark_as_advanced(OpenMPTarget_${DEVICE}_FLAGS OpenMPTarget_${DEVICE}_ARCH OpenMPTarget_${DEVICE}_LIBS)
       endif()
     endif()
   endforeach()
@@ -186,59 +258,71 @@ endif()
 
 unset(_OpenMPTarget_MIN_VERSION)
 
+# Attempt to find each requested device.
 foreach(LANG IN ITEMS C CXX)
-  foreach(TARGET_ARCH IN LISTS OpenMPTarget_FINDLIST)
+  foreach(DEVICE IN LISTS OpenMPTarget_FINDLIST)
     if(CMAKE_${LANG}_COMPILER_LOADED)
-      set(OpenMPTarget_${TARGET_ARCH}_VERSION "${OpenMP_${LANG}_VERSION}")
-      set(OpenMPTarget_${TARGET_ARCH}_VERSION_MAJOR "${OpenMP_${LANG}_VERSION}_MAJOR")
-      set(OpenMPTarget_${TARGET_ARCH}_VERSION_MINOR "${OpenMP_${LANG}_VERSION}_MINOR")
-      set(OpenMPTarget_${TARGET_ARCH}_FIND_QUIETLY ${OpenMPTarget_FIND_QUIETLY})
-      set(OpenMPTarget_${TARGET_ARCH}_FIND_REQUIRED ${OpenMPTarget_FIND_REQUIRED})
-      set(OpenMPTarget_${TARGET_ARCH}_FIND_VERSION ${OpenMPTarget_FIND_VERSION})
-      set(OpenMPTarget_${TARGET_ARCH}_FIND_VERSION_EXACT ${OpenMPTarget_FIND_VERSION_EXACT})
+      set(OpenMPTarget_${DEVICE}_VERSION "${OpenMP_${LANG}_VERSION}")
+      set(OpenMPTarget_${DEVICE}_VERSION_MAJOR "${OpenMP_${LANG}_VERSION}_MAJOR")
+      set(OpenMPTarget_${DEVICE}_VERSION_MINOR "${OpenMP_${LANG}_VERSION}_MINOR")
+      set(OpenMPTarget_${DEVICE}_FIND_QUIETLY ${OpenMPTarget_FIND_QUIETLY})
+      set(OpenMPTarget_${DEVICE}_FIND_REQUIRED ${OpenMPTarget_FIND_REQUIRED})
+      set(OpenMPTarget_${DEVICE}_FIND_VERSION ${OpenMPTarget_FIND_VERSION})
+      set(OpenMPTarget_${DEVICE}_FIND_VERSION_EXACT ${OpenMPTarget_FIND_VERSION_EXACT})
 
-      if(NOT (${OpenMPTarget_${TARGET_ARCH}_VERSION} VERSION_GREATER_EQUAL "4.0"))
+      # OpenMP target offloading is only supported in OpenMP 4.0 an newer.
+      if(OpenMPTarget_${DEVICE}_VERSION AND ("${OpenMPTarget_${DEVICE}_VERSION}" VERSION_LESS "4.0"))
         message(SEND_ERROR "FindOpenMPTarget requires at least OpenMP 4.0")
       endif()
 
-      find_package_handle_standard_args(OpenMPTarget_${TARGET_ARCH}
-        NAME_MISMATCHED
-        REQUIRED_VARS OpenMPTarget_${TARGET_ARCH}_FLAGS
-        VERSION_VAR OpenMPTarget_${TARGET_ARCH}_VERSION)
+      set(FPHSA_NAME_MISMATCHED TRUE)
+      find_package_handle_standard_args(OpenMPTarget_${DEVICE}
+        REQUIRED_VARS OpenMPTarget_${DEVICE}_FLAGS
+        VERSION_VAR OpenMPTarget_${DEVICE}_VERSION)
 
-      if(OpenMPTarget_${TARGET_ARCH}_FOUND)
-        if(DEFINED OpenMPTarget_${TARGET_ARCH}_VERSION)
+      if(OpenMPTarget_${DEVICE}_FOUND)
+        if(DEFINED OpenMPTarget_${DEVICE}_VERSION)
           if(NOT _OpenMPTarget_MIN_VERSION OR _OpenMPTarget_MIN_VERSION VERSION_GREATER OpenMPTarget_${LANG}_VERSION)
-            set(_OpenMPTarget_MIN_VERSION OpenMPTarget_${TARGET_ARCH}_VERSION)
+            set(_OpenMPTarget_MIN_VERSION OpenMPTarget_${DEVICE}_VERSION)
           endif()
         endif()
-        if(NOT TARGET OpenMPTarget::OpenMPTarget_${TARGET_ARCH})
-          add_library(OpenMPTarget::OpenMPTarget_${TARGET_ARCH} INTERFACE IMPORTED)
+        # Create a new target.
+        if(NOT TARGET OpenMPTarget::OpenMPTarget_${DEVICE})
+          add_library(OpenMPTarget::OpenMPTarget_${DEVICE} INTERFACE IMPORTED)
         endif()
-        separate_arguments(_OpenMPTarget_${TARGET_ARCH}_OPTIONS NATIVE_COMMAND "${OpenMPTarget_${TARGET_ARCH}_FLAGS}")
-        set_property(TARGET OpenMPTarget::OpenMPTarget_${TARGET_ARCH} PROPERTY
+        # Get compiler flags for offloading to the device and architecture and
+        # set the target features. Include the normal OpenMP flags as well.
+        set_property(TARGET OpenMPTarget::OpenMPTarget_${DEVICE} PROPERTY
           INTERFACE_COMPILE_OPTIONS 
-          "$<$<COMPILE_LANGUAGE:${LANG}>:${_OpenMPTarget_${TARGET_ARCH}_OPTIONS}>"
+          "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMPTarget_${DEVICE}_FLAGS}>"
+          "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMPTarget_${DEVICE}_ARCH}>"
           "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMP_${LANG}_FLAGS}>")
-        set_property(TARGET OpenMP::OpenMP_${LANG} PROPERTY
+        set_property(TARGET OpenMPTarget::OpenMPTarget_${DEVICE} PROPERTY
           INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${OpenMP_${LANG}_INCLUDE_DIRS}>")
-        set_property(TARGET OpenMPTarget::OpenMPTarget_${TARGET_ARCH} PROPERTY
+        set_property(TARGET OpenMPTarget::OpenMPTarget_${DEVICE} PROPERTY
           INTERFACE_LINK_LIBRARIES 
-          "${OpenMPTarget_${TARGET_ARCH}_LIBS}"
+          "${OpenMPTarget_${DEVICE}_LIBS}"
           "${OpenMP_${LANG}_LIBRARIES}")
-        set_property(TARGET OpenMPTarget::OpenMPTarget_${TARGET_ARCH} PROPERTY
+        # The offloading flags must also be passed during the linking phase so
+        # the compiler can pass the binary to the correct toolchain.
+        set_property(TARGET OpenMPTarget::OpenMPTarget_${DEVICE} PROPERTY
           INTERFACE_LINK_OPTIONS 
-          "$<$<COMPILE_LANGUAGE:${LANG}>:${_OpenMPTarget_${TARGET_ARCH}_OPTIONS}>"
+          "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMPTarget_${DEVICE}_FLAGS}>"
+          "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMPTarget_${DEVICE}_ARCH}>"
           "$<$<COMPILE_LANGUAGE:${LANG}>:${OpenMP_${LANG}_FLAGS}>")
-        unset(_OpenMPTarget_${TARGET_ARCH}_OPTIONS)
+        # Combine all the flags if not using the target for convenience.
+        set(OpenMPTarget_${DEVICE}_FLAGS ${OpenMP_${LANG}_FLAGS}
+          ${OpenMPTarget_${DEVICE}_FLAGS} 
+          ${OpenMPTarget_${DEVICE}_ARCH}
+          CACHE STRING "${DEVICE} target compile flags for OpenMP target offloading" FORCE)
       endif()
     endif()
   endforeach()
 endforeach()
 
 unset(_OpenMPTarget_REQ_VARS)
-foreach(TARGET_ARCH IN LISTS OpenMPTarget_FINDLIST)
-  list(APPEND _OpenMPTarget_REQ_VARS "OpenMPTarget_${TARGET_ARCH}_FOUND")
+foreach(DEVICE IN LISTS OpenMPTarget_FINDLIST)
+  list(APPEND _OpenMPTarget_REQ_VARS "OpenMPTarget_${DEVICE}_FOUND")
 endforeach()
 
 find_package_handle_standard_args(OpenMPTarget
