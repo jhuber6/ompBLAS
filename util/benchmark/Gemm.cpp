@@ -1,45 +1,23 @@
-#include "ompBLAS/Gemm.h"
+#include "ompBLAS/ompBLAS.h"
+#include "Common.h"
 
 #include <benchmark/benchmark.h>
-#include <algorithm>
-#include <iostream>
-#include <vector>
-#include <random>
-#include <chrono>
 
-static std::mt19937 rnd{std::random_device{}()};
-static std::uniform_real_distribution<double> uniformDouble(0.0, 1.0);
-static std::uniform_real_distribution<float> uniformSingle(0.0, 1.0);
-static std::uniform_int_distribution<int> uniformInt(0);
-
-int irand() { return uniformInt(rnd); }
-double srand() { return uniformSingle(rnd); }
-double drand() { return uniformDouble(rnd); }
-std::complex<float> crand() {
-  return std::complex<float>(uniformSingle(rnd), uniformSingle(rnd));
-}
-std::complex<double> zrand() {
-  return std::complex<double>(uniformDouble(rnd), uniformDouble(rnd));
-}
-
+template <typename T = double>
 static void BM_dgemm(benchmark::State& state) {
   long M = state.range(0);
   long N = M;
   long K = M;
-  double Alpha = 2.0 * drand() - 1.0;
-  double Beta = 2.0 * drand() - 1.0;
+  T Alpha = T(2.0) * random<T>() - T(1.0);
+  T Beta = T(2.0) * random<T>() - T(1.0);
 
-  std::vector<double> Av(M * K);
-  std::vector<double> Bv(K * N);
-  std::vector<double> Cv(M * N);
+  std::vector<T> Av = getRandomVector<T>(M * K);
+  std::vector<T> Bv = getRandomVector<T>(K * N);
+  std::vector<T> Cv = getRandomVector<T>(M * N);
 
-  std::generate(Av.begin(), Av.end(), []() { return 2.0 * drand() - 1.0; });
-  std::generate(Bv.begin(), Bv.end(), []() { return 2.0 * drand() - 1.0; });
-  std::generate(Cv.begin(), Cv.end(), []() { return 2.0 * drand() - 1.0; });
-
-  double *A = Av.data();
-  double *B = Bv.data();
-  double *C = Cv.data();
+  T *A = Av.data();
+  T *B = Bv.data();
+  T *C = Cv.data();
 
   double M_dbl = M;
   double N_dbl = N;

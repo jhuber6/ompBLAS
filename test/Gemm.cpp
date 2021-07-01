@@ -1,4 +1,4 @@
-#include "ompBLAS/Gemm.h"
+#include "ompBLAS/ompBLAS.h"
 #include "Common.h"
 
 extern "C" {

@@ -11,6 +11,8 @@ option(OMPBLAS_BUILD_BENCHMARK "Build the ompBLAS benchmarks" ON)
 # Compiler flags
 set(COMPILER_WARNINGS
     -Wall
+    -Wextra
+    -Wsign-compare
     -Wpedantic
     -Wunused
     -Wnon-virtual-dtor
@@ -26,7 +28,9 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_link_libraries(ompBLAS PUBLIC OpenMPTarget::OpenMPTarget_NVPTX)
-target_compile_options(ompBLAS PRIVATE ${COMPILER_WARNINGS})
+target_compile_options(ompBLAS PRIVATE 
+  $<$<CXX_COMPILER_ID:Clang>:${COMPILER_WARNINGS}>
+  $<$<CXX_COMPILER_ID:GNU>:${COMPILER_WARNINGS}>)
 
 # Configure Installation 
 install(TARGETS ompBLAS

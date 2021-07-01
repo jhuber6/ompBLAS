@@ -1,4 +1,4 @@
-#include "ompBLAS/Gemm.h"
+#include "ompBLAS/Level3/Gemm.h"
 
 namespace {
 
@@ -91,6 +91,8 @@ void gemmImpl(const Order Ordering, const Transpose TransA,
               const IndexType K, const T Alpha, const T *A, const IndexType LDA,
               const T *B, const IndexType LDB, const T Beta, T *C,
               const IndexType LDC) {
+
+  // TODO: Support conjugate.
   if (Ordering == Order::ColMajor) {
     if (TransA == Transpose::NoTrans && TransB == Transpose::NoTrans)
       gemm<MC, NC, KC, MR, NR>(M, N, K, Alpha, A, LDA, 1, B, LDB, 1, Beta, C,
