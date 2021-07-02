@@ -67,10 +67,28 @@ T getError(const std::vector<std::complex<T>> &X,
 }
 
 template <typename T>
+void checkResult(const std::complex<T> &X, const std::complex<T> &Y) {
+  double Error =
+      static_cast<double>(std::max(X.real() - Y.real(), X.imag() - Y.imag()));
+  if (Error > error_traits<std::complex<T>>::threshold) {
+    printf("*** FAILURE ***\nError: %.12e\n", Error);
+    exit(1);
+  }
+}
+
+template <typename T> void checkResult(const T &X, const T &Y) {
+  double Error = static_cast<double>(X - Y);
+  if (Error > error_traits<T>::threshold) {
+    printf("*** FAILURE ***\nError: %.12e\n", Error);
+    exit(1);
+  }
+}
+
+template <typename T>
 void checkResult(const std::vector<T> &X, const std::vector<T> &Y) {
   double Error = static_cast<double>(getError(X, Y));
-  printf("*** FAILURE ***\nError: %.12e\n", Error);
   if (Error > error_traits<T>::threshold) {
+    printf("*** FAILURE ***\nError: %.12e\n", Error);
     exit(1);
   }
 }

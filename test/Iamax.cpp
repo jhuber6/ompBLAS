@@ -24,7 +24,7 @@ void randomStimulus(F &&Ref, G &&Test) {
   }
 }
 
-int main(int argc, char **argv) {
+int main() {
   rnd.seed(std::random_device{}());
   printf("Testing IDAMAX...\n");
   randomStimulus<double>(idamax_, idamax);

@@ -55,7 +55,7 @@ void randomStimulus(F &&Ref, G &&Test) {
   checkResult(CBlas, CTest);
 }
 
-int main(int argc, char **argv) {
+int main() {
   rnd.seed(std::random_device{}());
   printf("Testing DGEMM...\n");
   randomStimulus<double>(dgemm_, dgemm);

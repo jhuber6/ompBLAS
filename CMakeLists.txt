@@ -18,7 +18,9 @@ set(COMPILER_WARNINGS
     -Wnon-virtual-dtor
     -Woverloaded-virtual
     -Wcast-align
-    -Wnull-dereference)
+    -Wnull-dereference
+    # Suppress this, std::complex is ABI compatible with C.
+    -Wno-return-type-c-linkage)
 
 # Compilation targets
 add_library(ompBLAS SHARED)
@@ -28,7 +30,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_link_libraries(ompBLAS PUBLIC OpenMPTarget::OpenMPTarget_NVPTX)
-target_compile_options(ompBLAS PRIVATE 
+target_compile_options(ompBLAS PUBLIC 
   $<$<CXX_COMPILER_ID:Clang>:${COMPILER_WARNINGS}>
   $<$<CXX_COMPILER_ID:GNU>:${COMPILER_WARNINGS}>)
 

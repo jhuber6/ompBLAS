@@ -12,7 +12,8 @@ template <typename T = double> static void BM_idamax(benchmark::State &state) {
 #pragma omp target data map(to : X[0:M])
   for (auto _ : state) {
     auto Start = std::chrono::high_resolution_clock::now();
-    idamax(M, X, 1);
+    int Idx = idamax(M, X, 1);
+    benchmark::DoNotOptimize(Idx);
     auto End = std::chrono::high_resolution_clock::now();
 
     auto Time =
