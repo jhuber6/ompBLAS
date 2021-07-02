@@ -22,9 +22,9 @@ void zgemm_(const char *transa, const char *transb, const int *m, const int *n,
 
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
-  int M = irand() % 256;
-  int N = irand() % 256;
-  int K = irand() % 256;
+  int M = irand() % 256 + 64;
+  int N = irand() % 256 + 64;
+  int K = irand() % 256 + 64;
   T alpha = T(2.0) * random<T>() - T(1.0);
   T beta = T(2.0) * random<T>() - T(1.0);
 

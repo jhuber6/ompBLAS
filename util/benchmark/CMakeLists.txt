@@ -22,6 +22,7 @@ endmacro()
 add_benchmark_file(gemm Gemm.cpp)
 add_benchmark_file(iamax Iamax.cpp)
 add_benchmark_file(dot Dot.cpp)
+add_benchmark_file(axpy Axpy.cpp)
 
 make_directory("${PROJECT_BINARY_DIR}/Benchmarks")
-add_custom_target(benchmark DEPENDS ${Benchmarks})
+add_custom_target(benchmark-all DEPENDS ${Benchmarks})
