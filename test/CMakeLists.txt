@@ -8,3 +8,4 @@ macro(add_test_file TESTNAME)
 endmacro()
 
 add_test_file(gemm-test Gemm.cpp)
+add_test_file(iamax-test Iamax.cpp)

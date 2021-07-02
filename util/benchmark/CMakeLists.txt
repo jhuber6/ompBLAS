@@ -20,6 +20,7 @@ macro(add_benchmark_file BENCHNAME)
 endmacro()
 
 add_benchmark_file(gemm Gemm.cpp)
+add_benchmark_file(iamax Iamax.cpp)
 
 make_directory("${PROJECT_BINARY_DIR}/Benchmarks")
 add_custom_target(benchmark DEPENDS ${Benchmarks})

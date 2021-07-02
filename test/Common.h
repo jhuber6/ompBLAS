@@ -69,7 +69,7 @@ T getError(const std::vector<std::complex<T>> &X,
 template <typename T>
 void checkResult(const std::vector<T> &X, const std::vector<T> &Y) {
   double Error = static_cast<double>(getError(X, Y));
-  printf("Error: %.12e\n", Error);
+  printf("*** FAILURE ***\nError: %.12e\n", Error);
   if (Error > error_traits<T>::threshold) {
     exit(1);
   }
