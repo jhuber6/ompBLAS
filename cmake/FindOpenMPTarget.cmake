@@ -242,7 +242,7 @@ foreach(LANG IN ITEMS C CXX)
             CACHE STRING "${DEVICE} target compile flags for OpenMP target offloading" FORCE)
         set(OpenMPTarget_${DEVICE}_ARCH ${_OpenMPTarget_${DEVICE}_ARCHS}
             CACHE STRING "${DEVICE} target architecture flags for OpenMP target offloading" FORCE)
-        set(OpenMPTarget_${DEVICE}_LIBS ${OpenMPTarget_${DEVICE}_LIBS_WORK}
+        set(OpenMPTarget_${DEVICE}_LIBRARIES ${OpenMPTarget_${DEVICE}_LIBS_WORK}
             CACHE STRING "${DEVICE} target libraries for OpenMP target offloading" FORCE)
         mark_as_advanced(OpenMPTarget_${DEVICE}_FLAGS OpenMPTarget_${DEVICE}_ARCH OpenMPTarget_${DEVICE}_LIBS)
       endif()

@@ -93,10 +93,11 @@ void checkResult(const std::vector<T> &X, const std::vector<T> &Y) {
   }
 }
 
-template <typename T> std::vector<T> getRandomVector(std::size_t Size) {
+template <typename T>
+std::vector<T> getRandomVector(std::size_t Size, T Range = 2.0) {
   std::vector<T> Arr(Size);
   std::generate(Arr.begin(), Arr.end(),
-                []() { return T(2.0) * random<T>() - T(1.0); });
+                [&]() { return Range * random<T>() - (Range / T(2.0)); });
 
   return Arr;
 }
