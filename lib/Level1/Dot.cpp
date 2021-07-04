@@ -24,6 +24,19 @@ T dot(const IndexType N, const T *X, const IndexType INCX, const T *Y,
   return Sum;
 }
 
+template <typename IndexType, typename T>
+double ddot(const IndexType N, const T SB, const T *X, const IndexType INCX,
+            const T *Y, const IndexType INCY) {
+  double Sum = T(SB);
+
+#pragma omp target teams distribute parallel for                               \
+  reduction(+ : Sum) map(to: X[0 : N]) map(to: Y[0 : N])
+  for (IndexType i = 0; i < N; ++i)
+    Sum += X[i * INCX] * Y[i * INCY];
+
+  return Sum;
+}
+
 } // namespace
 
 extern "C" {
@@ -60,5 +73,10 @@ std::complex<double> zdotc(const int N, const std::complex<double> *X,
                            const int INCX, const std::complex<double> *Y,
                            const int INCY) {
   return dot<true>(N, X, INCX, Y, INCY);
+}
+
+double sdsdot(const int N, const float SB, const float *X, const int INCX,
+              const float *Y, const int INCY) {
+  return ddot(N, SB, X, INCX, Y, INCY);
 }
 }

@@ -26,5 +26,8 @@ std::complex<float> cdotc(const int N, const std::complex<float> *X,
 std::complex<double> zdotc(const int N, const std::complex<double> *X,
                            const int INCX, const std::complex<double> *Y,
                            const int INCY);
+
+double sdsdot(const int N, const float SB, const float *X, const int INCX,
+              const float *Y, const int INCY);
 }
 #endif
