@@ -1,6 +1,7 @@
 target_sources(ompBLAS PRIVATE 
                Dot.cpp
                Scal.cpp
+               Copy.cpp
                Axpy.cpp
                Nrm2.cpp
                Asum.cpp
