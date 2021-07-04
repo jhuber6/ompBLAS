@@ -38,17 +38,17 @@ template <> struct error_traits<std::complex<double>> {
   static constexpr double threshold = 1.0E-11;
 };
 template <> struct error_traits<std::complex<float>> {
-  static constexpr double threshold = 1.0E-3;
+  static constexpr double threshold = 1.0E-2;
 };
 
 template <typename T>
 T getError(const std::vector<T> &X, const std::vector<T> &Y) {
   std::vector<T> Z(X.size());
   std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
-                 [](T X, T Y) { return std::abs(X - Y); });
-  T MaxError = *std::max_element(Z.begin(), Z.end());
+                 [](T X, T Y) { return (X - Y) * (X - Y); });
+  T Sum = std::accumulate(Z.begin(), Z.end(), T(0.0));
 
-  return MaxError;
+  return std::sqrt(Sum / static_cast<T>(Z.size()));
 }
 
 template <typename T>
@@ -56,21 +56,17 @@ T getError(const std::vector<std::complex<T>> &X,
            const std::vector<std::complex<T>> &Y) {
   std::vector<std::complex<T>> Z(X.size());
   std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
-                 [](auto X, auto Y) { return X - Y; });
-  T MaxRealError = std::max_element(Z.begin(), Z.end(), [](auto X, auto Y) {
-                     return X.real() < Y.real();
-                   })->real();
-  T MaxImagError = std::max_element(Z.begin(), Z.end(), [](auto X, auto Y) {
-                     return X.imag() < Y.imag();
-                   })->imag();
-  return std::max(MaxRealError, MaxImagError);
+                 [](auto X, auto Y) { return (X - Y) * (X - Y); });
+  std::complex<T> Sum = std::accumulate(Z.begin(), Z.end(), std::complex<T>(0.0));
+
+  return std::sqrt(std::abs(Sum) / static_cast<T>(Z.size()));
 }
 
 template <typename T>
 void checkResult(const std::complex<T> &X, const std::complex<T> &Y) {
   double Error =
-      static_cast<double>(std::max(X.real() - Y.real(), X.imag() - Y.imag()));
-  if (Error > error_traits<std::complex<T>>::threshold) {
+      static_cast<double>(std::sqrt(std::abs((X - Y) * (X - Y))));
+  if (std::abs(Error) > error_traits<std::complex<T>>::threshold) {
     printf("*** FAILURE ***\nError: %.12e\n", Error);
     exit(1);
   }
@@ -78,7 +74,7 @@ void checkResult(const std::complex<T> &X, const std::complex<T> &Y) {
 
 template <typename T> void checkResult(const T &X, const T &Y) {
   double Error = static_cast<double>(X - Y);
-  if (Error > error_traits<T>::threshold) {
+  if (std::abs(Error) > error_traits<T>::threshold) {
     printf("*** FAILURE ***\nError: %.12e\n", Error);
     exit(1);
   }
@@ -87,7 +83,7 @@ template <typename T> void checkResult(const T &X, const T &Y) {
 template <typename T>
 void checkResult(const std::vector<T> &X, const std::vector<T> &Y) {
   double Error = static_cast<double>(getError(X, Y));
-  if (Error > error_traits<T>::threshold) {
+  if (std::abs(Error) > error_traits<T>::threshold) {
     printf("*** FAILURE ***\nError: %.12e\n", Error);
     exit(1);
   }

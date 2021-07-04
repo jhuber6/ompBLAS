@@ -51,7 +51,7 @@ int main() {
   printf("Testing ZDOTU...\n");
   randomStimulus<std::complex<double>>(zdotu_, zdotu);
   printf("Pass!\n");
-  printf("Testing SDOTU...\n");
+  printf("Testing CDOTU...\n");
   randomStimulus<std::complex<float>>(cdotu_, cdotu);
   printf("Pass!\n");
   printf("Testing ZDOTC...\n");

@@ -15,7 +15,7 @@ template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
   int M = irand() % 1024 + 1024;
   int INCX = 1;
-  std::vector<T> X = getRandomVector<T>(M, T(10));
+  std::vector<T> X = getRandomVector<T>(M);
 
   auto RefNorm = Ref(&M, X.data(), &INCX);
   auto TestNorm = Test(M, X.data(), INCX);

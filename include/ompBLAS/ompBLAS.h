@@ -5,6 +5,7 @@
 #include "ompBLAS/Level1/Dot.h"
 #include "ompBLAS/Level1/Iamax.h"
 #include "ompBLAS/Level1/Nrm2.h"
+#include "ompBLAS/Level1/Asum.h"
 #include "ompBLAS/Level3/Gemm.h"
 
 #endif
