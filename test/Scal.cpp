@@ -21,8 +21,8 @@ void randomStimulus(F &&Ref, G &&Test) {
 
   std::vector<T> XRef = X;
   std::vector<T> XTest = X;
-  Ref(&N, &Alpha, X.data(), &INCX);
-  Test(N, Alpha, X.data(), INCX);
+  Ref(&N, &Alpha, XRef.data(), &INCX);
+  Test(N, Alpha, XTest.data(), INCX);
 
   checkResult(XRef, XTest);
 }

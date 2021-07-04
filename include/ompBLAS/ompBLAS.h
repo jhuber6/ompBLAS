@@ -8,6 +8,7 @@
 #include "ompBLAS/Level1/Iamax.h"
 #include "ompBLAS/Level1/Nrm2.h"
 #include "ompBLAS/Level1/Scal.h"
+#include "ompBLAS/Level1/Swap.h"
 #include "ompBLAS/Level3/Gemm.h"
 
 #endif
