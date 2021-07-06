@@ -77,7 +77,7 @@ void gemm(const IndexType M, const IndexType N, const IndexType K,
                 C[(i0 + i1 + i2) * LDCR + (j0 + j1 + j2) * LDCC] =
                     Alpha * rAB[i2][j2] +
                     Beta_ * C[(i0 + i1 + i2) * LDCR + (j0 + j1 + j2) * LDCC];
-          }
+          } 
         }
       }
     }

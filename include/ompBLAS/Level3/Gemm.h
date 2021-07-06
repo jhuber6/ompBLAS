@@ -1,18 +1,8 @@
 #ifndef GEMM_H
 #define GEMM_H
 
+#include "ompBLAS/Common.h"
 #include <complex>
-
-enum Transpose : int {
-  NoTrans = 111,
-  Trans = 112,
-  ConjTrans = 113,
-};
-
-enum Order : int {
-  RowMajor = 101,
-  ColMajor = 102,
-};
 
 extern "C" {
 
