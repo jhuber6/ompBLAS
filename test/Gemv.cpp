@@ -25,8 +25,8 @@ void zgemv_(const char *Trans, const int *M, const int *N,
 
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
-  int M = irand() % 256 + 64;
-  int N = irand() % 256 + 64;
+  int M = irand() % 256 + 256;
+  int N = irand() % 256 + 256;
   int INCX = 1;
   int INCY = 1;
   T alpha = T(2.0) * random<T>() - T(1.0);

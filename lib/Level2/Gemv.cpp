@@ -7,26 +7,47 @@ double conj(const double x) { return x; }
 std::complex<float> conj(const std::complex<float> x) { return std::conj(x); }
 std::complex<double> conj(const std::complex<double> x) { return std::conj(x); }
 
+template <typename T> void atomicSet(T *Y, const T Alpha, const T Sum) {
+#pragma omp atomic
+  *Y += Alpha * Sum;
+}
+
+template <typename T>
+void atomicSet(std::complex<T> *Y, const std::complex<T> Alpha,
+               const std::complex<T> Sum) {
+  const std::complex<T> X = Alpha * Sum;
+  T *YPtr = reinterpret_cast<T *>(Y);
+
+#pragma omp atomic
+  YPtr[0] += X.real();
+
+#pragma omp atomic
+  YPtr[1] += X.imag();
+}
+
 template <int MC, int NC, typename IndexType, typename T>
 void gemv(const IndexType M, const IndexType N, const T Alpha, const T *A,
           const IndexType LDAC, const IndexType LDAR, const T *X,
           const IndexType INCX, const T Beta, T *Y, const IndexType INCY,
           const bool Conj = false) {
 
-#pragma omp target teams distribute collapse(2) map(to : A [0:M * N])             \
+#pragma omp target teams distribute parallel for map(tofrom : Y [0:M])
+  for (IndexType i0 = 0; i0 < M; ++i0)
+    Y[i0 * INCY] = Beta * Y[i0 * INCY];
+
+#pragma omp target teams distribute collapse(2) map(to : A [0:M * N])          \
     map(to : X [0:N]) map(tofrom : Y [0:M])
   for (IndexType i0 = 0; i0 < M; i0 += MC) {
     for (IndexType j0 = 0; j0 < N; j0 += NC) {
       T sX[NC];
 
-      const IndexType MR = i0 + MC <= M ? MC : M % MC;
-      const IndexType NR = j0 + NC <= N ? NC : N % NC;
-      const T Beta_ = (j0 == 0) ? Beta : T(1.0);
-
-#pragma omp parallel firstprivate(Beta_, Alpha, i0, j0, M, N, INCX, INCY,      \
-                                  LDAC, LDAR, X, Y, A, MR, NR, Conj)           \
-    shared(sX)
+#pragma omp parallel firstprivate(Beta, Alpha, i0, j0, M, N, INCX, INCY, LDAC, \
+                                  LDAR, X, Y, A, Conj) shared(sX)
       {
+        const T Beta_ = (j0 == 0) ? Beta : T(1.0);
+        const IndexType MR = i0 + MC <= M ? MC : M % MC;
+        const IndexType NR = j0 + NC <= N ? NC : N % NC;
+
 #pragma omp for nowait
         for (IndexType j1 = 0; j1 < NC; ++j1)
           sX[j1] = (j0 + j1 < N) ? X[(j0 + j1) * INCX] : T(0.0);
@@ -42,7 +63,7 @@ void gemv(const IndexType M, const IndexType N, const T Alpha, const T *A,
             Sum += sX[j1] * Ax;
           }
 
-          Y[(i0 + i1) * INCY] = Alpha * Sum + Beta_ * Y[(i0 + i1) * INCY];
+          atomicSet(&Y[(i0 + i1) * INCY], Alpha, Sum);
         }
       }
     }
