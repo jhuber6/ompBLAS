@@ -44,7 +44,6 @@ void gemv(const IndexType M, const IndexType N, const T Alpha, const T *A,
 #pragma omp parallel firstprivate(Beta, Alpha, i0, j0, M, N, INCX, INCY, LDAC, \
                                   LDAR, X, Y, A, Conj) shared(sX)
       {
-        const T Beta_ = (j0 == 0) ? Beta : T(1.0);
         const IndexType MR = i0 + MC <= M ? MC : M % MC;
         const IndexType NR = j0 + NC <= N ? NC : N % NC;
 
