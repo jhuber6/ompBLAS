@@ -5,7 +5,7 @@ namespace {
 template <typename IndexType, typename T>
 void swap(const IndexType N, T *X, IndexType INCX, T *Y, const IndexType INCY) {
 #pragma omp target teams distribute parallel for                               \
-  map(tofrom : X [0:N]) map(tofrom : Y [0:N])
+  map(tofrom : X[0:N * INCX]) map(tofrom :Y [0:N * INCY])
   for (IndexType i = 0; i < N; ++i) {
     std::swap(X[i * INCX], Y[i * INCY]);
   }

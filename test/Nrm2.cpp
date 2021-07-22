@@ -13,12 +13,21 @@ double dznrm2_(const int *N, const std::complex<double> *X, const int *INCX);
 
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
-  int M = irand() % 1024 + 1024;
+  int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   int INCX = 1;
-  std::vector<T> X = getRandomVector<T>(M);
+  std::vector<T> X = getRandomVector<T>(N);
 
-  auto RefNorm = Ref(&M, X.data(), &INCX);
-  auto TestNorm = Test(M, X.data(), INCX);
+  auto RefNorm = Ref(&N, X.data(), &INCX);
+  auto TestNorm = Test(N, X.data(), INCX);
+
+  checkResult(RefNorm, TestNorm);
+
+  INCX = M;
+  X = getRandomVector<T>(N * M);
+
+  RefNorm = Ref(&N, X.data(), &INCX);
+  TestNorm = Test(N, X.data(), INCX);
 
   checkResult(RefNorm, TestNorm);
 }

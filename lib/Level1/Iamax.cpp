@@ -17,7 +17,7 @@ IndexType iamax(IndexType N, const T *X, const IndexType INCX) {
 #pragma omp declare reduction(iamax : std::pair<IndexType, T> :                \
     omp_out = omp_in.second > omp_out.second ? omp_in : omp_out)               \
   initializer(omp_priv = {minimum<IndexType>(), minimum<T>()})
-#pragma omp target teams distribute parallel for map(to : X [0:N])             \
+#pragma omp target teams distribute parallel for map(to : X[0:N * INCX])       \
     reduction(iamax : AbsMax)
   for (IndexType i = 0; i < N; ++i) {
     if (std::abs(X[i * INCX]) > AbsMax.second) {
@@ -36,7 +36,7 @@ IndexType iamax(IndexType N, const std::complex<T> *X, const IndexType INCX) {
 #pragma omp declare reduction(iamax : std::pair<IndexType, T> :                \
     omp_out = omp_in.second > omp_out.second ? omp_in : omp_out)               \
   initializer(omp_priv = {minimum<IndexType>(), minimum<T>()})
-#pragma omp target teams distribute parallel for map(to : X [0:N])             \
+#pragma omp target teams distribute parallel for map(to : X[0:N * INCX])       \
     reduction(iamax : AbsMax)
   for (IndexType i = 0; i < N; ++i) {
     if (abs1(X[i * INCX]) > AbsMax.second) {

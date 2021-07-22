@@ -7,6 +7,7 @@ macro(add_test_file TESTNAME)
   add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
 endmacro()
 
+add_test_file(offloading-test Offloading.cpp)
 add_test_file(gemm-test Gemm.cpp)
 add_test_file(iamax-test Iamax.cpp)
 add_test_file(dot-test Dot.cpp)

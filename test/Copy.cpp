@@ -16,6 +16,7 @@ void zcopy_(const int *N, const std::complex<double> *X, const int *INCX,
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
   int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   int INCX = 1;
   int INCY = 1;
   std::vector<T> X = getRandomVector<T>(N);
@@ -23,6 +24,18 @@ void randomStimulus(F &&Ref, G &&Test) {
 
   std::vector<T> YRef = Y;
   std::vector<T> YTest = Y;
+  Ref(&N, X.data(), &INCX, YRef.data(), &INCY);
+  Test(N, X.data(), INCX, YTest.data(), INCY);
+
+  checkResult(YRef, YTest);
+
+  INCX = M;
+  INCY = M;
+  X = getRandomVector<T>(N * INCX);
+  Y = getRandomVector<T>(N * INCX);
+
+  YRef = Y;
+  YTest = Y;
   Ref(&N, X.data(), &INCX, YRef.data(), &INCY);
   Test(N, X.data(), INCX, YTest.data(), INCY);
 

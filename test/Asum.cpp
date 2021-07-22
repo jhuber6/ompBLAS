@@ -11,11 +11,20 @@ double dzasum_(const int *N, const std::complex<double> *X, const int *INCX);
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
   int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   int INCX = 1;
   std::vector<T> X = getRandomVector<T>(N, T(0.05));
 
   T RefSum = Ref(&N, X.data(), &INCX);
   T TestSum = Test(N, X.data(), INCX);
+
+  checkResult(RefSum, TestSum);
+
+  INCX = M;
+  X = getRandomVector<T>(N * M, T(0.05));
+
+  RefSum = Ref(&N, X.data(), &INCX);
+  TestSum = Test(N, X.data(), INCX);
 
   checkResult(RefSum, TestSum);
 }

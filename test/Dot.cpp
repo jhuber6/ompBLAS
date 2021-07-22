@@ -29,6 +29,7 @@ std::complex<double> zdotc_(const int *N, const std::complex<double> *X,
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
   int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   int INCX = 1;
   int INCY = 1;
   std::vector<T> X = getRandomVector<T>(N);
@@ -36,6 +37,16 @@ void randomStimulus(F &&Ref, G &&Test) {
 
   T RefSum = Ref(&N, X.data(), &INCX, Y.data(), &INCY);
   T TestSum = Test(N, X.data(), INCX, Y.data(), INCY);
+
+  checkResult(RefSum, TestSum);
+
+  INCX = M;
+  INCY = M;
+  X = getRandomVector<T>(N * M);
+  Y = getRandomVector<T>(N * M);
+
+  RefSum = Ref(&N, X.data(), &INCX, Y.data(), &INCY);
+  TestSum = Test(N, X.data(), INCX, Y.data(), INCY);
 
   checkResult(RefSum, TestSum);
 }

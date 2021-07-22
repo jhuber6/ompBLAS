@@ -18,6 +18,7 @@ void zaxpy_(const int *N, const std::complex<double> *Alpha,
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
   int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   T Alpha = T(2.0) * random<T>() - T(1.0);
   int INCX = 1;
   int INCY = 1;
@@ -26,6 +27,16 @@ void randomStimulus(F &&Ref, G &&Test) {
 
   std::vector<T> YRef = Y;
   std::vector<T> YTest = Y;
+  Ref(&N, &Alpha, X.data(), &INCX, YRef.data(), &INCY);
+  Test(N, Alpha, X.data(), INCX, YTest.data(), INCY);
+
+  INCX = M;
+  INCY = M;
+  X = getRandomVector<T>(N * INCX);
+  Y = getRandomVector<T>(N * INCX);
+
+  YRef = Y;
+  YTest = Y;
   Ref(&N, &Alpha, X.data(), &INCX, YRef.data(), &INCY);
   Test(N, Alpha, X.data(), INCX, YTest.data(), INCY);
 

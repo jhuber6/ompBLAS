@@ -5,8 +5,8 @@ namespace {
 template <typename IndexType, typename T>
 void axpy(const IndexType N, const T Alpha, const T *X, const IndexType INCX,
           T *Y, const IndexType INCY) {
-#pragma omp target teams distribute parallel for map(to : X [0:N])             \
-  map(tofrom : Y [0:N]) firstprivate(X)
+#pragma omp target teams distribute parallel for firstprivate(X)               \
+  map(to : X [0:N * INCX]) map(tofrom : Y [0:N *INCY])
   for (IndexType i = 0; i < N; ++i)
     Y[i * INCY] = Alpha * X[i * INCX] + Y[i * INCY];
 }

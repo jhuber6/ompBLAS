@@ -12,8 +12,8 @@ T dot(const IndexType N, const T *X, const IndexType INCX, const T *Y,
       const IndexType INCY) {
   T Sum = T(0.0);
 
-#pragma omp target teams distribute parallel for                               \
-  reduction(+ : Sum) map(to: X[0 : N]) map(to: Y[0 : N])
+#pragma omp target teams distribute parallel for reduction(+ : Sum)            \
+  map(to: X[0:N * INCX]) map(to: Y[0:N * INCY])
   for (IndexType i = 0; i < N; ++i) {
     if (Conj)
       Sum += conj(X[i * INCX]) * Y[i * INCY];
@@ -29,8 +29,8 @@ double ddot(const IndexType N, const T SB, const T *X, const IndexType INCX,
             const T *Y, const IndexType INCY) {
   double Sum = T(SB);
 
-#pragma omp target teams distribute parallel for                               \
-  reduction(+ : Sum) map(to: X[0 : N]) map(to: Y[0 : N])
+#pragma omp target teams distribute parallel for reduction(+ : Sum)            \
+  map(to: X[0:N * INCX]) map(to: Y[0:N * INCY])
   for (IndexType i = 0; i < N; ++i)
     Sum += X[i * INCX] * Y[i * INCY];
 

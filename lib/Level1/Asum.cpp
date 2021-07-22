@@ -9,7 +9,7 @@ template <typename IndexType, typename T>
 T asum(const IndexType N, const T *X, const IndexType INCX) {
   T Sum = 0.0;
 
-#pragma omp target teams distribute parallel for map(to : X[0 : N]) \
+#pragma omp target teams distribute parallel for map(to : X[0:N * INCX])       \
   reduction(+ : Sum)
   for (IndexType i = 0; i < N; ++i)
     Sum += std::abs(X[i * INCX]);
@@ -21,7 +21,7 @@ template <typename IndexType, typename T>
 T asum(const IndexType N, const std::complex<T> *X, const IndexType INCX) {
   T Sum = 0.0;
 
-#pragma omp target teams distribute parallel for map(to : X[0 : N]) \
+#pragma omp target teams distribute parallel for map(to : X[0:N * INCX])       \
   reduction(+ : Sum)
   for (IndexType i = 0; i < N; ++i)
     Sum += std::abs(X[i * INCX].real()) + std::abs(X[i * INCX].imag());

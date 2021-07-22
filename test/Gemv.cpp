@@ -70,6 +70,22 @@ void randomStimulus(F &&Ref, G &&Test) {
        X.data(), INCX, beta, YTest.data(), INCY);
 
   checkResult(YBlas, YTest);
+
+  int K = irand() % 16 + 16;
+  INCX = K;
+  INCY = K;
+  A = getRandomVector<T>(N * M);
+  X = getRandomVector<T>(N * K);
+  Y = getRandomVector<T>(M * K);
+
+  YBlas = Y;
+  YTest = Y;
+  Ref("N", &M, &N, &alpha, A.data(), &M, X.data(), &INCX, &beta, YBlas.data(),
+      &INCX);
+  Test(Order::ColMajor, Transpose::NoTrans, M, N, alpha, A.data(), M, X.data(),
+       INCX, beta, YTest.data(), INCY);
+
+  checkResult(YBlas, YTest);
 }
 
 int main() {

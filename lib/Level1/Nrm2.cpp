@@ -67,7 +67,7 @@ T nrm2(const IndexType N, const T *X, const IndexType INCX) {
   T MedSum = 0.0;
   T SmallSum = 0.0;
 
-#pragma omp target teams distribute parallel for map(to: X[0 : N])             \
+#pragma omp target teams distribute parallel for map(to: X[0:N * INCX])        \
   reduction(+ : BigSum) reduction(+ : SmallSum) reduction(+ : MedSum)
   for (IndexType i = 0; i < N; ++i) {
     T AbsX = std::abs(X[i * INCX]);
@@ -88,7 +88,7 @@ T nrm2(const IndexType N, const std::complex<T> *X, const IndexType INCX) {
   T BigSum = 0.0;
   T SmallSum = 0.0;
 
-#pragma omp target teams distribute parallel for map(to: X[0 : N])             \
+#pragma omp target teams distribute parallel for map(to: X[0:N * INCX])        \
   reduction(+ : BigSum) reduction(+ : SmallSum) reduction(+ : MedSum)
   for (IndexType i = 0; i < N; ++i) {
     T AbsXR = std::abs(X[i * INCX].real());

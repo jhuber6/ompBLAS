@@ -6,7 +6,7 @@ template <typename IndexType, typename T>
 void copy(const IndexType N, const T *X, const IndexType INCX, T *Y,
           const IndexType INCY) {
 #pragma omp target teams distribute parallel for                               \
-  map(to : X [0:N]) map(tofrom : Y [0:N])
+  map(to : X[0:N * INCX]) map(tofrom : Y[0:N * INCY])
   for (IndexType i = 0; i < N; ++i)
     Y[i * INCY] = X[i * INCX];
 }

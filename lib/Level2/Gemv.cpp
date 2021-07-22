@@ -31,12 +31,12 @@ void gemv(const IndexType M, const IndexType N, const T Alpha, const T *A,
           const IndexType INCX, const T Beta, T *Y, const IndexType INCY,
           const bool Conj = false) {
 
-#pragma omp target teams distribute parallel for map(tofrom : Y [0:M])
+#pragma omp target teams distribute parallel for map(tofrom : Y [0:M * INCY])
   for (IndexType i0 = 0; i0 < M; ++i0)
     Y[i0 * INCY] = Beta * Y[i0 * INCY];
 
-#pragma omp target teams distribute collapse(2) map(to : A [0:M * N])          \
-    map(to : X [0:N]) map(tofrom : Y [0:M])
+#pragma omp target teams distribute collapse(2) map(to : A[0:M * N])           \
+    map(to : X[0:N * INCX]) map(tofrom : Y [0:M * INCY])
   for (IndexType i0 = 0; i0 < M; i0 += MC) {
     for (IndexType j0 = 0; j0 < N; j0 += NC) {
       T sX[NC];

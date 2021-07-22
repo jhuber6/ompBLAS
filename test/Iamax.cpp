@@ -11,12 +11,24 @@ int izamax_(const int *N, const std::complex<double> *X, const int *INCX);
 
 template <typename T, typename F, typename G>
 void randomStimulus(F &&Ref, G &&Test) {
-  int M = irand() % 1024 + 1024;
+  int N = irand() % 1024 + 1024;
+  int M = irand() % 16 + 16;
   int INCX = 1;
-  std::vector<T> X = getRandomVector<T>(M);
+  std::vector<T> X = getRandomVector<T>(N);
 
-  int RefIdx = Ref(&M, X.data(), &INCX);
-  int TestIdx = Test(M, X.data(), INCX);
+  int RefIdx = Ref(&N, X.data(), &INCX);
+  int TestIdx = Test(N, X.data(), INCX);
+
+  if (RefIdx != TestIdx) {
+    printf("*** FAILURE ***\nBLAS: %d\nompBLAS: %d\n", RefIdx, TestIdx);
+    exit(1);
+  }
+
+  INCX = M;
+  X = getRandomVector<T>(N * M);
+
+  RefIdx = Ref(&N, X.data(), &INCX);
+  TestIdx = Test(N, X.data(), INCX);
 
   if (RefIdx != TestIdx) {
     printf("*** FAILURE ***\nBLAS: %d\nompBLAS: %d\n", RefIdx, TestIdx);

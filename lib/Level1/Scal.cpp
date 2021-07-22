@@ -4,7 +4,7 @@ namespace {
 
 template <typename IndexType, typename T>
 void scal(const IndexType N, const T Alpha, T *X, const IndexType INCX) {
-#pragma omp target teams distribute parallel for map(tofrom : X [0:N])
+#pragma omp target teams distribute parallel for map(tofrom : X[0:N * INCX])
   for (IndexType i = 0; i < N; ++i)
     X[i * INCX] = Alpha * X[i * INCX];
 }
